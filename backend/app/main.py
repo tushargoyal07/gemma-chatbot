@@ -1,3 +1,5 @@
+import asyncio
+import contextlib
 import logging
 import sys
 import time
@@ -54,11 +56,10 @@ async def validate_ollama_at_startup(settings: Settings) -> None:
             health["model_loaded"],
         )
     except LLMServiceError as exc:
-        if settings.startup_validate_ollama:
-            logger.error("Ollama startup validation failed: %s", exc.message)
-            sys.exit(1)
-        logger.warning(
-            "Ollama startup validation failed (continuing in development): %s",
+        level = logging.ERROR if settings.startup_validate_ollama else logging.WARNING
+        logger.log(
+            level,
+            "Ollama startup validation failed (use GET /health/model to check): %s",
             exc.message,
         )
 
@@ -68,8 +69,12 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.log_level)
     validate_startup_config(settings)
-    await validate_ollama_at_startup(settings)
+    # Run after startup so /health is available immediately for Railway.
+    validation_task = asyncio.create_task(validate_ollama_at_startup(settings))
     yield
+    validation_task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await validation_task
 
 
 settings = get_settings()

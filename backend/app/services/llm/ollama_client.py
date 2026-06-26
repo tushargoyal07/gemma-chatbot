@@ -14,10 +14,18 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
+def _ollama_headers(base_url: str) -> dict[str, str]:
+    """ngrok free tier returns an interstitial unless this header is sent."""
+    if "ngrok" in base_url.lower():
+        return {"ngrok-skip-browser-warning": "true"}
+    return {}
+
+
 def create_ollama_client(settings: Settings) -> AsyncClient:
     return AsyncClient(
         host=settings.ollama_base_url,
         timeout=settings.ollama_request_timeout,
+        headers=_ollama_headers(settings.ollama_base_url),
     )
 
 
