@@ -1,7 +1,4 @@
-import asyncio
-import contextlib
 import logging
-import sys
 import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
@@ -12,8 +9,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.routes import api_router
 from app.config import Settings, get_settings
-from app.core.exceptions import LLMServiceError
-from app.services.llm.ollama_client import check_ollama_health
 
 logger = logging.getLogger(__name__)
 
@@ -41,26 +36,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def validate_startup_config(settings: Settings) -> None:
+def log_startup_config(settings: Settings) -> None:
     if not settings.ollama_base_url.strip():
-        logger.error("OLLAMA_BASE_URL is required but not set")
-        sys.exit(1)
-
-
-async def validate_ollama_at_startup(settings: Settings) -> None:
-    try:
-        health = await check_ollama_health(settings)
+        logger.warning("OLLAMA_BASE_URL is not set — chat will fail until configured")
+    else:
         logger.info(
-            "Ollama startup check passed: model=%s loaded=%s",
-            health["model"],
-            health["model_loaded"],
-        )
-    except LLMServiceError as exc:
-        level = logging.ERROR if settings.startup_validate_ollama else logging.WARNING
-        logger.log(
-            level,
-            "Ollama startup validation failed (use GET /health/model to check): %s",
-            exc.message,
+            "Starting with ollama_base_url=%s model=%s environment=%s",
+            settings.ollama_base_url,
+            settings.gemma_model,
+            settings.environment,
         )
 
 
@@ -68,13 +52,8 @@ async def validate_ollama_at_startup(settings: Settings) -> None:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.log_level)
-    validate_startup_config(settings)
-    # Run after startup so /health is available immediately for Railway.
-    validation_task = asyncio.create_task(validate_ollama_at_startup(settings))
+    log_startup_config(settings)
     yield
-    validation_task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await validation_task
 
 
 settings = get_settings()
