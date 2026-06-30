@@ -35,6 +35,9 @@ htmlcov/
 .pytest_cache/
 .mypy_cache/
 
+# Cloudflare tunnel (local credentials / config with paths)
+scripts/cloudflared-config.yml
+
 # OS
 .DS_Store
 Thumbs.db

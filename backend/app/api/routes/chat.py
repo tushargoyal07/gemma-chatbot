@@ -7,13 +7,13 @@ from app.config import Settings, get_settings
 from app.core.exceptions import LLMServiceError
 from app.models.chat import ChatRequest, ChatResponse
 from app.services.chat_service import ChatService
-from app.services.llm.ollama_service import OllamaService
+from app.services.llm.factory import create_llm_service
 
 router = APIRouter()
 
 
 def get_chat_service(settings: Settings = Depends(get_settings)) -> ChatService:
-    return ChatService(llm_service=OllamaService(settings=settings))
+    return ChatService(llm_service=create_llm_service(settings))
 
 
 def _sse_event(payload: dict) -> str:

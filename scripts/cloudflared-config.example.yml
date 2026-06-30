@@ -1,0 +1,13 @@
+# Copy to cloudflared-config.yml and fill in your values.
+# Do NOT commit cloudflared-config.yml if it contains secrets paths.
+
+tunnel: ollama
+credentials-file: C:\Users\YOUR_USER\.cloudflared\YOUR_TUNNEL_UUID.json
+
+ingress:
+  - hostname: ollama.yourdomain.com
+    service: http://localhost:11434
+    originRequest:
+      # Ollama rejects requests unless Host is localhost:11434
+      httpHostHeader: localhost:11434
+  - service: http_status:404

@@ -37,11 +37,21 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def log_startup_config(settings: Settings) -> None:
+    if settings.llm_provider == "groq":
+        if not settings.groq_api_key.strip():
+            logger.warning("GROQ_API_KEY is not set — chat will fail until configured")
+        logger.info(
+            "Starting with llm_provider=groq model=%s environment=%s",
+            settings.groq_model,
+            settings.environment,
+        )
+        return
+
     if not settings.ollama_base_url.strip():
         logger.warning("OLLAMA_BASE_URL is not set — chat will fail until configured")
     else:
         logger.info(
-            "Starting with ollama_base_url=%s model=%s environment=%s",
+            "Starting with llm_provider=ollama ollama_base_url=%s model=%s environment=%s",
             settings.ollama_base_url,
             settings.gemma_model,
             settings.environment,

@@ -23,10 +23,19 @@ def _env_int(name: str, default: int) -> int:
 class Settings:
     """Application configuration loaded from environment variables."""
 
+    # LLM provider: groq (remote) | ollama (local / company GPU)
+    llm_provider: str = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
+
+    # Ollama (self-hosted Gemma 4 on company GPU later)
     gemma_model: str = os.getenv("GEMMA_MODEL", "gemma4:e2b")
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+    # Groq (remote inference for now)
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    groq_request_timeout: float = float(os.getenv("GROQ_REQUEST_TIMEOUT", "120"))
     cors_origins: list[str] = [
-        origin.strip()
+        origin.strip().rstrip("/")
         for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
         if origin.strip()
     ]
