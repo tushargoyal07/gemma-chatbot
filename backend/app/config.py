@@ -20,6 +20,15 @@ def _env_int(name: str, default: int) -> int:
     return int(value)
 
 
+def _normalize_database_url(url: str) -> str:
+    """Railway Postgres uses postgres:// — SQLAlchemy async needs postgresql+asyncpg://."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://") and "+asyncpg" not in url:
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
 class Settings:
     """Application configuration loaded from environment variables."""
 
@@ -34,6 +43,15 @@ class Settings:
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
     groq_request_timeout: float = float(os.getenv("GROQ_REQUEST_TIMEOUT", "120"))
+
+    # Protect /chat endpoints. Leave unset to disable (local dev only).
+    api_key: str = os.getenv("API_KEY", "")
+
+    # SQLite locally; set DATABASE_URL on Railway for Postgres plugin.
+    database_url: str = _normalize_database_url(
+        os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/chat.db")
+    )
+
     cors_origins: list[str] = [
         origin.strip().rstrip("/")
         for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")

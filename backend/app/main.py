@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.routes import api_router
 from app.config import Settings, get_settings
+from app.db import close_db, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def log_startup_config(settings: Settings) -> None:
+    if settings.is_production and not settings.api_key.strip():
+        logger.warning("API_KEY is not set — /chat endpoints are public")
+
     if settings.llm_provider == "groq":
         if not settings.groq_api_key.strip():
             logger.warning("GROQ_API_KEY is not set — chat will fail until configured")
@@ -63,7 +67,12 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.log_level)
     log_startup_config(settings)
+    try:
+        await init_db(settings)
+    except Exception:
+        logger.exception("Database init failed — chat history will not persist")
     yield
+    await close_db()
 
 
 settings = get_settings()

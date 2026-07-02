@@ -21,7 +21,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
       {messages.length === 0 && !isLoading && (
         <div className="empty-state">
           <h2>How can I help you today?</h2>
-          <p>Ask anything — your conversation stays on this device.</p>
+          <p>Ask anything — your chats are saved on the server.</p>
         </div>
       )}
 

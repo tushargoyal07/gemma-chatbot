@@ -1,0 +1,19 @@
+# Local dev or DigitalOcean Droplet / App Platform reference.
+# Copy backend/.env.example to backend/.env and fill in values.
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - path: backend/.env
+        required: false
+    environment:
+      PORT: "8000"
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  backend-data:

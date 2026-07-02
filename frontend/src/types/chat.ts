@@ -15,6 +15,27 @@ export interface ChatMessage {
 
 export interface ChatRequest {
   messages: ChatMessage[]
+  conversation_id?: string
+}
+
+export interface ConversationSummary {
+  id: string
+  title: string
+  updated_at: string
+}
+
+export interface ConversationDetail {
+  id: string
+  title: string
+  created_at: string
+  updated_at: string
+  messages: ChatMessage[]
+}
+
+export interface CreateConversationResponse {
+  id: string
+  title: string
+  created_at: string
 }
 
 export interface ChatResponse {

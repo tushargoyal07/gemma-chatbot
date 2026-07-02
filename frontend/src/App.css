@@ -58,6 +58,94 @@
   cursor: not-allowed;
 }
 
+.conversation-list {
+  flex: 1;
+  min-height: 0;
+  margin-top: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.conversation-list-empty {
+  margin: 0.5rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.conversation-item {
+  display: flex;
+  align-items: stretch;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.conversation-item--active {
+  background: var(--bg-hover);
+}
+
+.conversation-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversation-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.conversation-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.conversation-title {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.conversation-time {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.conversation-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.conversation-item:hover .conversation-delete,
+.conversation-item--active .conversation-delete {
+  opacity: 1;
+}
+
+.conversation-delete:hover:not(:disabled) {
+  color: #f87171;
+}
+
 .sidebar-footer {
   margin-top: auto;
   display: flex;
