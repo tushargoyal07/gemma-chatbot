@@ -71,6 +71,7 @@ export async function streamChatMessage({
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  let receivedDone = false
 
   while (true) {
     const { done, value } = await reader.read()
@@ -88,19 +89,49 @@ export async function streamChatMessage({
         continue
       }
 
-      const payload = JSON.parse(dataLine.slice(6)) as StreamEvent
+      let payload: StreamEvent
+      try {
+        payload = JSON.parse(dataLine.slice(6)) as StreamEvent
+      } catch {
+        throw new Error('Received an invalid response from the server.')
+      }
 
       if (payload.type === 'start') {
         continue
       } else if (payload.type === 'token') {
         onToken(payload.content)
       } else if (payload.type === 'done') {
+        receivedDone = true
         onDone(payload.usage)
       } else if (payload.type === 'error') {
         throw new Error(payload.message)
       }
     }
   }
+
+  if (!receivedDone) {
+    throw new Error(
+      'The response ended unexpectedly. The model may still be loading — try again.',
+    )
+  }
+}
+
+function normalizeStreamErrorMessage(message: string): string {
+  const lower = message.toLowerCase()
+
+  if (lower.includes('not loaded') || lower.includes('pull the model')) {
+    return `${message} If you're using Ollama locally, pull the model and try again.`
+  }
+
+  if (
+    lower.includes('connection refused') ||
+    lower.includes('failed to connect') ||
+    lower.includes('network')
+  ) {
+    return 'Unable to reach the server. Make sure the backend is running.'
+  }
+
+  return message
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -132,8 +163,12 @@ export function getErrorMessage(error: unknown): string {
     return `Request failed with status ${axiosError.response.status}.`
   }
 
+  if (error instanceof TypeError) {
+    return 'Unable to reach the server. Make sure the backend is running.'
+  }
+
   if (error instanceof Error) {
-    return error.message
+    return normalizeStreamErrorMessage(error.message)
   }
 
   return 'An unexpected error occurred.'

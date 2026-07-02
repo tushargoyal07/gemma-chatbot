@@ -1,9 +1,15 @@
 import os
 from functools import lru_cache
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# asyncpg rejects these when SQLAlchemy forwards them from the URL query string.
+_STRIP_URL_QUERY_KEYS = frozenset(
+    {"ssl", "sslmode", "sslcert", "sslkey", "sslrootcert", "sslcrl"}
+)
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -22,11 +28,25 @@ def _env_int(name: str, default: int) -> int:
 
 def _normalize_database_url(url: str) -> str:
     """Railway Postgres uses postgres:// — SQLAlchemy async needs postgresql+asyncpg://."""
+    if url.startswith("sqlite"):
+        return url
+
     if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+asyncpg://", 1)
-    if url.startswith("postgresql://") and "+asyncpg" not in url:
-        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return url
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    parsed = urlparse(url)
+    if parsed.scheme.startswith("postgresql") and "+asyncpg" not in parsed.scheme:
+        parsed = parsed._replace(scheme="postgresql+asyncpg")
+
+    if parsed.scheme.startswith("postgresql"):
+        query = [
+            (key, value)
+            for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+            if key.lower() not in _STRIP_URL_QUERY_KEYS
+        ]
+        parsed = parsed._replace(query=urlencode(query))
+
+    return urlunparse(parsed)
 
 
 class Settings:
@@ -49,7 +69,7 @@ class Settings:
 
     # SQLite locally; set DATABASE_URL on Railway for Postgres plugin.
     database_url: str = _normalize_database_url(
-        os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/chat.db")
+        os.getenv("DATABASE_URL") or "sqlite+aiosqlite:///./data/chat.db"
     )
 
     cors_origins: list[str] = [

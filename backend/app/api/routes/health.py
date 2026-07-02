@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import text
 
 from app.config import Settings, get_settings
 from app.core.exceptions import LLMServiceError
+from app.db.engine import get_engine
 from app.services.llm.groq_client import check_groq_health
 from app.services.llm.ollama_client import check_ollama_health
 
@@ -11,6 +13,22 @@ router = APIRouter()
 @router.get("/health")
 async def health_check() -> dict[str, str]:
     return {"status": "healthy"}
+
+
+@router.get("/health/db")
+async def database_health_check(
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str | bool]:
+    try:
+        engine = get_engine(settings)
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"status": "unhealthy", "database": "disconnected", "error": str(exc)},
+        ) from exc
 
 
 @router.get("/health/model")

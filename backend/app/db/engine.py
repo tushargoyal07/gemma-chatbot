@@ -22,15 +22,28 @@ def _ensure_sqlite_parent_dir(url: str) -> None:
     Path(path_part).parent.mkdir(parents=True, exist_ok=True)
 
 
+def _postgres_connect_args(url: str) -> dict:
+    # Railway's TCP proxy requires SSL; sslmode in the URL breaks asyncpg via SQLAlchemy.
+    return {"ssl": "require"}
+
+
 def get_engine(settings: Settings) -> AsyncEngine:
     global _engine
     if _engine is None:
         url = settings.database_url
         _ensure_sqlite_parent_dir(url)
         connect_args: dict = {}
+        engine_kwargs: dict = {}
         if url.startswith("sqlite"):
             connect_args["check_same_thread"] = False
-        _engine = create_async_engine(url, connect_args=connect_args)
+        elif url.startswith("postgresql"):
+            connect_args.update(_postgres_connect_args(url))
+            engine_kwargs["pool_pre_ping"] = True
+        _engine = create_async_engine(
+            url,
+            connect_args=connect_args,
+            **engine_kwargs,
+        )
     return _engine
 
 

@@ -70,7 +70,10 @@ async def lifespan(app: FastAPI):
     try:
         await init_db(settings)
     except Exception:
-        logger.exception("Database init failed — chat history will not persist")
+        logger.exception("Database init failed")
+        if settings.is_production:
+            raise
+        logger.warning("Continuing without persistent chat history (development only)")
     yield
     await close_db()
 

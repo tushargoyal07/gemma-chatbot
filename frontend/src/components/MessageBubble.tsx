@@ -16,11 +16,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <span className="message-role">{isUser ? 'You' : 'Gemma'}</span>
         {isUser ? (
           <p className="message-text">{message.content}</p>
+        ) : message.error ? (
+          <p className="message-text message-text--error" role="alert">
+            {message.error}
+          </p>
         ) : isStreaming && !message.content ? (
-          <div className="typing-indicator" aria-label="Assistant is typing">
-            <span />
-            <span />
-            <span />
+          <div className="message-loading" aria-label="Assistant is responding">
+            {message.isModelLoading && (
+              <p className="model-loading-hint">Model loading, may take 60s…</p>
+            )}
+            <div className="typing-indicator">
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
         ) : isStreaming ? (
           <p className="message-text message-text--streaming">

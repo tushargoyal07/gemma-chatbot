@@ -10,6 +10,8 @@ export interface ChatMessage {
   role: MessageRole
   content: string
   isStreaming?: boolean
+  isModelLoading?: boolean
+  error?: string
   usage?: UsageStats
 }
 

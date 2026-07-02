@@ -74,9 +74,16 @@ export function useChat({
       setIsLoading(true)
       setError(null)
 
+      const isFirstMessage = nextMessages.length === 1
+
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: '', isStreaming: true },
+        {
+          role: 'assistant',
+          content: '',
+          isStreaming: true,
+          isModelLoading: isFirstMessage,
+        },
       ])
 
       try {
@@ -103,6 +110,7 @@ export function useChat({
               updated[lastIndex] = {
                 ...last,
                 content: last.content + token,
+                isModelLoading: false,
               }
               return updated
             })
@@ -137,10 +145,24 @@ export function useChat({
           onConversationActivity(currentConversationId, title)
         }
       } catch (err) {
-        setError(getErrorMessage(err))
-        setMessages((current) =>
-          current.length >= 2 ? current.slice(0, -2) : current.slice(0, -1),
-        )
+        const errorMessage = getErrorMessage(err)
+        setMessages((current) => {
+          const updated = [...current]
+          const lastIndex = updated.length - 1
+          const last = updated[lastIndex]
+
+          if (!last || last.role !== 'assistant') {
+            return current
+          }
+
+          updated[lastIndex] = {
+            ...last,
+            isStreaming: false,
+            isModelLoading: false,
+            error: errorMessage,
+          }
+          return updated
+        })
       } finally {
         setIsLoading(false)
       }
