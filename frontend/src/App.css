@@ -506,3 +506,98 @@
     padding-right: 1rem;
   }
 }
+
+.access-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: var(--bg-main);
+}
+
+.access-gate-card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--bg-elevated);
+  text-align: center;
+}
+
+.access-gate-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.access-gate-subtitle {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.access-gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.access-code-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.access-code-digit {
+  width: 2.75rem;
+  height: 3.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.access-code-digit:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.access-code-digit:disabled {
+  opacity: 0.6;
+}
+
+.access-gate-error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #f87171;
+}
+
+.access-gate-submit {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.625rem;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.access-gate-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.access-gate-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

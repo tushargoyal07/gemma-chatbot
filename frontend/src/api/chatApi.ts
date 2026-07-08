@@ -1,22 +1,21 @@
 import axios, { AxiosError } from 'axios'
 
+import { apiHeaders } from './authHeaders'
 import type { ChatRequest, ChatResponse, StreamEvent, UsageStats } from '../types/chat'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-const API_KEY = import.meta.env.VITE_API_KEY as string | undefined
-
-function apiHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (API_KEY?.trim()) {
-    headers['X-API-Key'] = API_KEY.trim()
-  }
-  return headers
-}
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: apiHeaders(),
   timeout: 120000,
+})
+
+apiClient.interceptors.request.use((config) => {
+  const key = apiHeaders()['X-API-Key']
+  if (key) {
+    config.headers.set('X-API-Key', key)
+  }
+  return config
 })
 
 export async function sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
@@ -37,7 +36,7 @@ export async function streamChatMessage({
 }): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/chat/stream`, {
     method: 'POST',
-    headers: apiHeaders(),
+    headers: apiHeaders(true),
     body: JSON.stringify({
       messages: request.messages
         .filter((message) => message.content.trim().length > 0)

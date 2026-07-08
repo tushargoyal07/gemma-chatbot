@@ -1,7 +1,6 @@
 # Environment & secrets
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # Python
@@ -15,12 +14,23 @@ venv/
 env/
 ENV/
 backend/data/
+*.egg-info/
+.ruff_cache/
+
+# SQLite (local DB + WAL/journal files)
+*.db
+*.sqlite
+*.sqlite3
+*-wal
+*-shm
 
 # Node / frontend
 node_modules/
 dist/
 dist-ssr/
 *.local
+*.tsbuildinfo
+.vite/
 
 # Logs
 logs/
@@ -44,10 +54,11 @@ scripts/cloudflared-config.yml
 Thumbs.db
 desktop.ini
 
-# Editors
+# Editors / IDE
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.cursor/
 *.suo
 *.ntvs*
 *.njsproj

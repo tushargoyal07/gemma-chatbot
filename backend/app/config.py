@@ -1,4 +1,5 @@
 import os
+import ssl
 from functools import lru_cache
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -6,10 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_DEFAULT_ACCESS_CODE = "482913"
+
 # asyncpg rejects these when SQLAlchemy forwards them from the URL query string.
 _STRIP_URL_QUERY_KEYS = frozenset(
     {"ssl", "sslmode", "sslcert", "sslkey", "sslrootcert", "sslcrl"}
 )
+
+_DEFAULT_SQLITE_URL = "sqlite+aiosqlite:///./data/chat.db"
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -49,6 +54,19 @@ def _normalize_database_url(url: str) -> str:
     return urlunparse(parsed)
 
 
+def _resolve_database_url() -> str:
+    """Prefer Railway private networking; fall back to public URL or local SQLite."""
+    private_url = os.getenv("DATABASE_PRIVATE_URL", "").strip()
+    if private_url:
+        return _normalize_database_url(private_url)
+
+    public_url = os.getenv("DATABASE_URL", "").strip()
+    if public_url:
+        return _normalize_database_url(public_url)
+
+    return _DEFAULT_SQLITE_URL
+
+
 class Settings:
     """Application configuration loaded from environment variables."""
 
@@ -67,10 +85,11 @@ class Settings:
     # Protect /chat endpoints. Leave unset to disable (local dev only).
     api_key: str = os.getenv("API_KEY", "")
 
-    # SQLite locally; set DATABASE_URL on Railway for Postgres plugin.
-    database_url: str = _normalize_database_url(
-        os.getenv("DATABASE_URL") or "sqlite+aiosqlite:///./data/chat.db"
-    )
+    # 6-digit app gate. Users enter this in the UI; also accepted as X-API-Key.
+    access_code: str = os.getenv("ACCESS_CODE", _DEFAULT_ACCESS_CODE)
+
+    # SQLite locally; on Railway link the Postgres plugin (see .env.example).
+    database_url: str = _resolve_database_url()
 
     cors_origins: list[str] = [
         origin.strip().rstrip("/")

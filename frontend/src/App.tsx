@@ -1,12 +1,14 @@
 import { useCallback } from 'react'
 
+import { AccessGate } from './components/AccessGate'
 import { ChatWindow } from './components/ChatWindow'
 import { Sidebar } from './components/Sidebar'
+import { useAccessGate } from './hooks/useAccessGate'
 import { useChat } from './hooks/useChat'
 import { useConversations } from './hooks/useConversations'
 import './App.css'
 
-function App() {
+function ChatApp() {
   const {
     conversations,
     isLoading: isLoadingConversations,
@@ -80,6 +82,16 @@ function App() {
       />
     </div>
   )
+}
+
+function App() {
+  const { state: accessState, grantAccess } = useAccessGate()
+
+  if (accessState === 'required') {
+    return <AccessGate onSuccess={grantAccess} />
+  }
+
+  return <ChatApp />
 }
 
 export default App

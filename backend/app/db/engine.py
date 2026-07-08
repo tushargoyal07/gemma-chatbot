@@ -1,5 +1,7 @@
 import logging
+import ssl
 from pathlib import Path
+from urllib.parse import urlparse
 
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
@@ -10,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker | None = None
+
+_RAILWAY_INTERNAL_SUFFIX = ".railway.internal"
 
 
 def _ensure_sqlite_parent_dir(url: str) -> None:
@@ -23,8 +27,17 @@ def _ensure_sqlite_parent_dir(url: str) -> None:
 
 
 def _postgres_connect_args(url: str) -> dict:
-    # Railway's TCP proxy requires SSL; sslmode in the URL breaks asyncpg via SQLAlchemy.
-    return {"ssl": "require"}
+    host = (urlparse(url).hostname or "").lower()
+
+    # Railway private network — plain TCP, no SSL.
+    if host.endswith(_RAILWAY_INTERNAL_SUFFIX):
+        return {}
+
+    # Railway public proxy uses self-signed certs; verify_mode=require fails otherwise.
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return {"ssl": ctx}
 
 
 def get_engine(settings: Settings) -> AsyncEngine:
@@ -61,7 +74,12 @@ async def init_db(settings: Settings) -> None:
     engine = get_engine(settings)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables ready (%s)", settings.database_url.split("://", 1)[0])
+    parsed = urlparse(settings.database_url)
+    if parsed.scheme.startswith("sqlite"):
+        label = "sqlite"
+    else:
+        label = f"postgresql ({parsed.hostname or 'unknown'})"
+    logger.info("Database tables ready (%s)", label)
 
 
 async def close_db() -> None:

@@ -38,8 +38,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def log_startup_config(settings: Settings) -> None:
-    if settings.is_production and not settings.api_key.strip():
-        logger.warning("API_KEY is not set — /chat endpoints are public")
+    access_code = settings.access_code.strip()
+    if access_code:
+        if not access_code.isdigit() or len(access_code) != 6:
+            logger.warning("ACCESS_CODE should be exactly 6 digits")
+        logger.info("App access code gate is enabled")
+    elif settings.is_production and not settings.api_key.strip():
+        logger.warning("ACCESS_CODE and API_KEY are unset — /chat endpoints are public")
 
     if settings.llm_provider == "groq":
         if not settings.groq_api_key.strip():

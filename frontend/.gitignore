@@ -11,6 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+.vite/
+
+# Environment (root .gitignore also applies; listed here for frontend-only clones)
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*

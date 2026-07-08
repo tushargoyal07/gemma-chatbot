@@ -1,5 +1,6 @@
 import axios from 'axios'
 
+import { apiHeaders } from './authHeaders'
 import type {
   ConversationDetail,
   ConversationSummary,
@@ -7,20 +8,18 @@ import type {
 } from '../types/chat'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-const API_KEY = import.meta.env.VITE_API_KEY as string | undefined
-
-function apiHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {}
-  if (API_KEY?.trim()) {
-    headers['X-API-Key'] = API_KEY.trim()
-  }
-  return headers
-}
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: apiHeaders(),
   timeout: 30000,
+})
+
+apiClient.interceptors.request.use((config) => {
+  const key = apiHeaders()['X-API-Key']
+  if (key) {
+    config.headers.set('X-API-Key', key)
+  }
+  return config
 })
 
 export async function listConversations(): Promise<ConversationSummary[]> {
